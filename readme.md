@@ -59,6 +59,8 @@ Features: AsynchDNS IDN IPv6 Largefile GSS-API Kerberos SPNEGO NTLM NTLM_WB SSL 
 
 # Centmin Mod Nginx HTTP/3 Tests
 
+## Nginx + AWS-LC
+
 Using Centmin Mod Nginx built against AWS-LC crypto library which combines OpenSSL and BoringSSL to support HTTP/3 QUIC using Centmin Mod variable `AWS_LC_SWITCH='y'`
 
 `/usr/local/nginx/conf/conf.d/domain.com.ssl.conf`
@@ -112,6 +114,62 @@ built with OpenSSL 1.1.1 (compatible; AWS-LC 1.29.0) (running with AWS-LC 1.29.0
 TLS SNI support enabled
 ```
 > configure arguments: --with-ld-opt='-Wl,-E -L/usr/local/zlib-cf/lib -L/opt/aws-lc-install/lib64 -lcrypto -lssl -L/usr/local/nginx-dep/lib -lrt -ljemalloc -Wl,-z,relro,-z,now -Wl,-rpath,/usr/local/zlib-cf/lib:/opt/aws-lc-install/lib64:/usr/local/nginx-dep/lib -pie -flto=2 -flto-compression-level=3 -fuse-ld=gold' --with-cc-opt='-I/opt/aws-lc-install/include -I/usr/local/zlib-cf/include -I/usr/local/nginx-dep/include -m64 -march=native -fPIC -g -O3 -fstack-protector-strong -flto=2 -flto-compression-level=3 -fuse-ld=gold --param=ssp-buffer-size=4 -Wformat -Wno-pointer-sign -Wimplicit-fallthrough=0 -Wno-cast-align -Wno-implicit-function-declaration -Wno-builtin-declaration-mismatch -Wno-deprecated-declarations -Wno-int-conversion -Wno-unused-result -Wno-vla-parameter -Wno-maybe-uninitialized -Wno-return-local-addr -Wno-array-parameter -Wno-alloc-size-larger-than -Wno-address -Wno-array-bounds -Wno-discarded-qualifiers -Wno-stringop-overread -Wno-stringop-truncation -Wno-missing-field-initializers -Wno-unused-variable -Wno-format -Wno-error=unused-result -Wno-missing-profile -Wno-stringop-overflow -Wno-free-nonheap-object -Wno-discarded-qualifiers -Wno-bad-function-cast -Wno-dangling-pointer -Wno-array-parameter -fcode-hoisting -Wno-cast-function-type -Wno-format-extra-args -Wp,-D_FORTIFY_SOURCE=2' --prefix=/usr/local/nginx --sbin-path=/usr/local/sbin/nginx --conf-path=/usr/local/nginx/conf/nginx.conf --build=110624-114904-almalinux8-kvm-3fc54df --with-compat --without-pcre2 --with-http_stub_status_module --with-http_secure_link_module --with-libatomic --with-http_gzip_static_module --with-http_sub_module --with-http_addition_module --with-http_image_filter_module=dynamic --with-http_geoip_module --with-stream_geoip_module --with-stream_realip_module --with-stream_ssl_preread_module --with-threads --with-stream --with-stream_ssl_module --with-http_realip_module --add-dynamic-module=../ngx-fancyindex-0.4.2 --add-module=../ngx_cache_purge-2.5.1 --add-dynamic-module=../ngx_devel_kit-0.3.2 --add-dynamic-module=../set-misc-nginx-module-0.33 --add-dynamic-module=../echo-nginx-module-0.63 --add-module=../redis2-nginx-module-0.15 --add-module=../ngx_http_redis-0.4.0-cmm --add-module=../memc-nginx-module-0.19 --add-module=../srcache-nginx-module-0.33 --add-dynamic-module=../headers-more-nginx-module-0.34 --with-pcre-jit --with-zlib=../zlib-cloudflare-1.3.3 --with-zlib-opt=-fPIC --with-http_ssl_module --with-http_v2_module --with-http_v3_module
+
+## Nginx + quicTLS OpenSSL 1.1.1w+quic fork
+
+Centmin Mod Nginx built against quicTLS OpenSSL 1.1.1w+quic fork with `NGINX_QUIC_SUPPORT='y'`
+
+`/usr/local/nginx/conf/conf.d/domain.com.ssl.conf`
+
+```
+server {
+  listen 443 ssl http2;
+  listen 443 quic reuseport;
+  server_name domain.com www.domain.com;
+```
+
+HTTP/3 QUIC
+
+```
+curl -Ik --http3 https://domain.com
+HTTP/3 200 
+date: Tue, 11 Jun 2024 14:07:41 GMT
+content-type: text/html; charset=utf-8
+content-length: 6356
+last-modified: Tue, 11 Jun 2024 11:51:21 GMT
+vary: accept-encoding
+etag: "66683a39-18d4"
+server: nginx centminmod
+x-powered-by: centminmod
+alt-svc: h3=":8443"; ma=86400
+accept-ranges: bytes
+```
+
+HTTP/2
+
+```
+curl -Ik https://domain.com
+HTTP/2 200 
+date: Tue, 11 Jun 2024 14:07:56 GMT
+content-type: text/html; charset=utf-8
+content-length: 6356
+last-modified: Tue, 11 Jun 2024 11:51:21 GMT
+vary: Accept-Encoding
+etag: "66683a39-18d4"
+server: nginx centminmod
+x-powered-by: centminmod
+alt-svc: h3=":8443"; ma=86400
+accept-ranges: bytes
+```
+
+```
+nginx -V
+nginx version: nginx/1.27.0 (110624-140156-almalinux8-kvm-3fc54df)
+built by gcc 13.2.1 20231205 (Red Hat 13.2.1-6) (GCC) 
+built with OpenSSL 1.1.1w+quic  11 Sep 2023
+TLS SNI support enabled
+```
+> configure arguments: --with-ld-opt='-Wl,-E -L/opt/openssl-quic/lib -lssl -lcrypto -L/usr/local/zlib-cf/lib -L/usr/local/nginx-dep/lib -ljemalloc -Wl,-z,relro,-z,now -Wl,-rpath,/opt/openssl-quic/lib:/usr/local/zlib-cf/lib:/usr/local/nginx-dep/lib -pie -flto=2 -flto-compression-level=3 -fuse-ld=gold' --with-cc-opt='-I/opt/openssl-quic/include -I/usr/local/zlib-cf/include -I/usr/local/nginx-dep/include -m64 -march=native -fPIC -g -O3 -fstack-protector-strong -flto=2 -flto-compression-level=3 -fuse-ld=gold --param=ssp-buffer-size=4 -Wformat -Wno-pointer-sign -Wimplicit-fallthrough=0 -Wno-cast-align -Wno-implicit-function-declaration -Wno-builtin-declaration-mismatch -Wno-deprecated-declarations -Wno-int-conversion -Wno-unused-result -Wno-vla-parameter -Wno-maybe-uninitialized -Wno-return-local-addr -Wno-array-parameter -Wno-alloc-size-larger-than -Wno-address -Wno-array-bounds -Wno-discarded-qualifiers -Wno-stringop-overread -Wno-stringop-truncation -Wno-missing-field-initializers -Wno-unused-variable -Wno-format -Wno-error=unused-result -Wno-missing-profile -Wno-stringop-overflow -Wno-free-nonheap-object -Wno-discarded-qualifiers -Wno-bad-function-cast -Wno-dangling-pointer -Wno-array-parameter -fcode-hoisting -Wno-cast-function-type -Wno-format-extra-args -Wp,-D_FORTIFY_SOURCE=2' --prefix=/usr/local/nginx --sbin-path=/usr/local/sbin/nginx --conf-path=/usr/local/nginx/conf/nginx.conf --build=110624-140156-almalinux8-kvm-3fc54df --with-compat --without-pcre2 --with-http_stub_status_module --with-http_secure_link_module --with-libatomic --with-http_gzip_static_module --with-http_sub_module --with-http_addition_module --with-http_image_filter_module=dynamic --with-http_geoip_module --with-stream_geoip_module --with-stream_realip_module --with-stream_ssl_preread_module --with-threads --with-stream --with-stream_ssl_module --with-http_realip_module --add-dynamic-module=../ngx-fancyindex-0.4.2 --add-module=../ngx_cache_purge-2.5.1 --add-dynamic-module=../ngx_devel_kit-0.3.2 --add-dynamic-module=../set-misc-nginx-module-0.33 --add-dynamic-module=../echo-nginx-module-0.63 --add-module=../redis2-nginx-module-0.15 --add-module=../ngx_http_redis-0.4.0-cmm --add-module=../memc-nginx-module-0.19 --add-module=../srcache-nginx-module-0.33 --add-dynamic-module=../headers-more-nginx-module-0.34 --with-pcre-jit --with-zlib=../zlib-cloudflare-1.3.3 --with-zlib-opt=-fPIC --with-http_ssl_module --with-http_v2_module --with-http_v3_module --with-openssl-opt='enable-ec_nistp_64_gcc_128 enable-tls1_3 -fuse-ld=gold'
 
 
 # HTTP/3 Tests
