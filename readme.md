@@ -2,7 +2,7 @@ Custom curl version built with HTTP/3 QUIC support
 
 ```
 curl -V
-curl 8.9.0-DEV (x86_64-pc-linux-gnu) libcurl/8.9.0-DEV quictls/3.1.5 zlib/1.2.11 brotli/1.0.9 zstd/1.5.6 libidn2/2.2.0 libpsl/0.20.2 libssh2/1.10.0 nghttp2/1.33.0 ngtcp2/1.5.0 nghttp3/1.1.0 OpenLDAP/2.4.46
+curl 8.9.0-DEV (x86_64-pc-linux-gnu) libcurl/8.9.0-DEV quictls/3.1.5 zlib/1.2.11 brotli/1.0.9 zstd/1.5.6 libidn2/2.2.0 libpsl/0.20.2 libssh2/1.10.0 nghttp2/1.33.0 ngtcp2/1.5.0 nghttp3/1.3.0 OpenLDAP/2.4.46
 Release-Date: [unreleased]
 Protocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp scp sftp smb smbs smtp smtps telnet tftp
 Features: alt-svc AsynchDNS brotli HSTS HTTP2 HTTP3 HTTPS-proxy IDN IPv6 Largefile libz NTLM PSL SSL threadsafe TLS-SRP UnixSockets zstd
