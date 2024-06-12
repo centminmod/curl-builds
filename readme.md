@@ -314,6 +314,36 @@ PORT    STATE SERVICE
 Nmap done: 1 IP address (1 host up) scanned in 0.16 seconds
 ```
 
+Unfortunately, AWS-LC built Nginx doesn't support Post-Quantum KEM Kyber ciphers from https://blog.centminmod.com/2023/10/03/2860/how-to-enable-cloudflare-post-quantum-x25519kyber768-key-exchange-support-in-centmin-mod-nginx/.
+
+In `/usr/local/nginx/conf/nginx.conf` set `ssl_ecdh_curve`
+
+```
+http {
+ ssl_ecdh_curve X25519Kyber768Draft00:X25519;
+```
+
+Results in error
+
+```
+nginx -t
+nginx: [emerg] SSL_CTX_set1_curves_list("X25519Kyber768Draft00:X25519") failed
+nginx: configuration file /usr/local/nginx/conf/nginx.conf test failed
+```
+
+Seems only supported curves with Nginx + AWS-LC are:
+
+* P-256
+* P-384
+* P-521
+* X25519
+
+i.e.
+
+```
+ssl_ecdh_curve prime256v1:secp384r1:secp521r1:X25519;
+```
+
 or with Nginx fork, Freenginx 1.27.1
 
 ```
