@@ -18,6 +18,7 @@ BUILD_DIR=$(mktemp -d ${TMPDIR}/build-XXXXXXXXXX)
 BUILD_QUICTLS='y'
 BUILD_NGHTTP3='y'
 BUILD_NGTCP2='y'
+BUILD_STATIC_OPENSSL='y'
 QUICTL_VERSION="openssl-3.1.5+quic"
 QUICTL_REPO="https://github.com/quictls/openssl"
 CURL_REPO="https://github.com/curl/curl"
@@ -114,6 +115,19 @@ if [[ "$BUILD_QUICTLS" = [yY] ]]; then
     git clone --depth 1 -b ${QUICTL_VERSION} ${QUICTL_REPO}
     cd openssl
     ./config enable-tls1_3 --prefix=${INSTALL_PREFIX}/quictls
+    make -j$(nproc)
+    sudo make install
+    popd
+fi
+
+# Compile static 64-bit quicTLS (OpenSSL) if BUILD_STATIC_OPENSSL flag is set
+if [[ "$BUILD_STATIC_OPENSSL" = [yY] ]]; then
+    echo
+    echo "Compiling static quicTLS..."
+    mkdir -p "${BUILD_DIR}/openssl"
+    pushd "${BUILD_DIR}/openssl"
+    ./config enable-tls1_3 -static --prefix=${INSTALL_PREFIX}/quictls-static
+    make clean
     make -j$(nproc)
     sudo make install
     popd
@@ -230,6 +244,16 @@ make -j$(nproc)
 sudo make install
 popd
 
+# Check static quicTLS OpenSSL binary
+echo
+ldd "${INSTALL_PREFIX}/quictls-static/bin/openssl"
+echo
+${INSTALL_PREFIX}/quictls-static/bin/openssl version -a
+
+# Check quicTLS OpenSSL binary supported ciphers
+echo
+${INSTALL_PREFIX}/quictls-static/bin/openssl ciphers -V 'ALL:COMPLEMENTOFALL'
+
 # Check curl build
 echo
 ldd /usr/local/bin/curl
@@ -242,3 +266,4 @@ echo
 rm -rf "${BUILD_DIR}"
 
 echo "curl with HTTP/2 and HTTP/3 support built and installed in /usr/local/bin/curl"
+echo "static openssl build at ${INSTALL_PREFIX}/quictls-static/bin/openssl"
