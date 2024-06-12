@@ -17,7 +17,9 @@ echo
 BUILD_DIR=$(mktemp -d ${TMPDIR}/build-XXXXXXXXXX)
 BUILD_QUICTLS='y'
 BUILD_NGHTTP3='y'
+BUILD_NGHTTP2='y'
 BUILD_NGTCP2='y'
+BUILD_LIBSSH2='y'
 BUILD_STATIC_OPENSSL='y'
 QUICTL_VERSION="openssl-3.1.5+quic"
 QUICTL_REPO="https://github.com/quictls/openssl"
@@ -26,13 +28,19 @@ NGHTTP3_VERSION="v1.3.0"
 NGHTTP3_REPO="https://github.com/ngtcp2/nghttp3"
 NGTCP2_VERSION="v1.5.0"
 NGTCP2_REPO="https://github.com/ngtcp2/ngtcp2"
-BROTLI_VERSION="v1.0.9"
+NGHTTP2_VERSION="v1.62.1"
+NGHTTP2_REPO="https://github.com/nghttp2/nghttp2"
+BROTLI_VERSION="v1.1.0"
 BROTLI_REPO="https://github.com/google/brotli"
+LIBSSH2_VERSION="1.11.0"
+LIBSSH2_REPO="https://www.libssh2.org/download/libssh2-1.11.0.tar.gz"
 ZSTD_VERSION="v1.5.6"
 ZSTD_REPO="https://github.com/facebook/zstd"
 QUICTL_DIR=${BUILD_DIR}/quictls
 NGHTTP3_DIR=${BUILD_DIR}/nghttp3
 NGTCP2_DIR=${BUILD_DIR}/ngtcp2
+NGHTTP2_DIR=${BUILD_DIR}/nghttp2
+LIBSSH2_DIR=${BUILD_DIR}/libssh2
 CURL_DIR=${BUILD_DIR}/curl
 BROTLI_DIR=${BUILD_DIR}/brotli
 ZSTD_DIR=${BUILD_DIR}/zstd
@@ -79,25 +87,21 @@ fi
 # Function to clean up installation directories
 clean_install_dirs() {
     if [[ "$BUILD_QUICTLS" = [yY] ]]; then
-        sudo rm -rf ${QUICTL_DIR} ${NGHTTP3_DIR} ${NGTCP2_DIR} ${CURL_DIR} ${BROTLI_DIR} ${ZSTD_DIR}
+        sudo rm -rf ${QUICTL_DIR} ${NGHTTP3_DIR} ${NGTCP2_DIR} ${NGHTTP2_DIR} ${LIBSSH2_DIR} ${CURL_DIR} ${BROTLI_DIR} ${ZSTD_DIR}
     else
-        sudo rm -rf ${NGHTTP3_DIR} ${NGTCP2_DIR} ${CURL_DIR} ${BROTLI_DIR} ${ZSTD_DIR}
+        sudo rm -rf ${NGHTTP3_DIR} ${NGTCP2_DIR} ${NGHTTP2_DIR} ${LIBSSH2_DIR} ${CURL_DIR} ${BROTLI_DIR} ${ZSTD_DIR}
     fi
 }
 
 # Clean up installation directories if they exist
 clean_install_dirs
 
-# Enable gcc-toolset-13 if available
+# Enable gcc-toolset if available
 if [ -f /opt/rh/gcc-toolset-13/root/usr/bin/gcc ]; then
     source /opt/rh/gcc-toolset-13/enable
-fi
-# Enable gcc-toolset-12 if available
-if [ -f /opt/rh/gcc-toolset-12/root/usr/bin/gcc ]; then
+elif [ -f /opt/rh/gcc-toolset-12/root/usr/bin/gcc ]; then
     source /opt/rh/gcc-toolset-12/enable
-fi
-# Enable gcc-toolset-11 if available
-if [ -f /opt/rh/gcc-toolset-11/root/usr/bin/gcc ]; then
+elif [ -f /opt/rh/gcc-toolset-11/root/usr/bin/gcc ]; then
     source /opt/rh/gcc-toolset-11/enable
 fi
 
@@ -169,11 +173,39 @@ if [[ "$BUILD_NGTCP2" = [yY] ]]; then
     popd
 fi
 
+# Compile nghttp2 if BUILD_NGHTTP2 flag is set
+if [[ "$BUILD_NGHTTP2" = [yY] ]]; then
+    echo
+    echo "Compiling nghttp2..."
+    pushd "${BUILD_DIR}"
+    git clone -b ${NGHTTP2_VERSION} ${NGHTTP2_REPO}
+    cd nghttp2
+    autoreconf -fi
+    ./configure --prefix=${INSTALL_PREFIX}/nghttp2 --enable-lib-only
+    make -j$(nproc)
+    sudo make install
+    popd
+fi
+
 # Set compiler environment variables again
 unset CC
 unset CXX
 export CC="ccache gcc"
 export CXX="ccache g++"
+
+# Compile libssh2 if BUILD_LIBSSH2 flag is set
+if [[ "$BUILD_LIBSSH2" = [yY] ]]; then
+    echo
+    echo "Compiling libssh2..."
+    pushd "${BUILD_DIR}"
+    curl -LO ${LIBSSH2_REPO}
+    tar -xzf libssh2-${LIBSSH2_VERSION}.tar.gz
+    cd libssh2-${LIBSSH2_VERSION}
+    ./configure --prefix=${INSTALL_PREFIX}/libssh2
+    make -j$(nproc)
+    sudo make install
+    popd
+fi
 
 # Compile Brotli
 echo
@@ -214,12 +246,12 @@ echo
 g++ --version
 
 # Set PKG_CONFIG_PATH to include the paths for the compiled dependencies
-export PKG_CONFIG_PATH=${INSTALL_PREFIX}/quictls/lib64/pkgconfig:${INSTALL_PREFIX}/nghttp3/lib/pkgconfig:${INSTALL_PREFIX}/ngtcp2/lib/pkgconfig:${INSTALL_PREFIX}/brotli/lib64/pkgconfig:${INSTALL_PREFIX}/zstd/lib/pkgconfig
+export PKG_CONFIG_PATH=${INSTALL_PREFIX}/quictls/lib64/pkgconfig:${INSTALL_PREFIX}/nghttp3/lib/pkgconfig:${INSTALL_PREFIX}/ngtcp2/lib/pkgconfig:${INSTALL_PREFIX}/nghttp2/lib/pkgconfig:${INSTALL_PREFIX}/brotli/lib64/pkgconfig:${INSTALL_PREFIX}/zstd/lib/pkgconfig:${INSTALL_PREFIX}/libssh2/lib/pkgconfig
 
 # Set LDFLAGS and CPPFLAGS to include the paths for the compiled dependencies
-LDFLAGS="-Wl,-rpath,${INSTALL_PREFIX}/quictls/lib64:${INSTALL_PREFIX}/ngtcp2/lib:${INSTALL_PREFIX}/nghttp3/lib:${INSTALL_PREFIX}/brotli/lib64:${INSTALL_PREFIX}/zstd/lib -L${INSTALL_PREFIX}/quictls/lib64 -L${INSTALL_PREFIX}/ngtcp2/lib -L${INSTALL_PREFIX}/nghttp3/lib -L${INSTALL_PREFIX}/brotli/lib64 -L${INSTALL_PREFIX}/zstd/lib"
-CPPFLAGS="-I${INSTALL_PREFIX}/quictls/include -I${INSTALL_PREFIX}/ngtcp2/include -I${INSTALL_PREFIX}/nghttp3/include -I${INSTALL_PREFIX}/brotli/include -I${INSTALL_PREFIX}/zstd/include"
-LIBS="-lbrotlidec-static -lbrotlicommon-static -lbrotlienc-static -lzstd"
+LDFLAGS="-Wl,-rpath,${INSTALL_PREFIX}/quictls/lib64:${INSTALL_PREFIX}/ngtcp2/lib:${INSTALL_PREFIX}/nghttp3/lib:${INSTALL_PREFIX}/nghttp2/lib:${INSTALL_PREFIX}/libssh2/lib:${INSTALL_PREFIX}/brotli/lib64:${INSTALL_PREFIX}/zstd/lib -L${INSTALL_PREFIX}/quictls/lib64 -L${INSTALL_PREFIX}/ngtcp2/lib -L${INSTALL_PREFIX}/nghttp3/lib -L${INSTALL_PREFIX}/nghttp2/lib -L${INSTALL_PREFIX}/brotli/lib64 -L${INSTALL_PREFIX}/zstd/lib -L${INSTALL_PREFIX}/libssh2/lib"
+CPPFLAGS="-I${INSTALL_PREFIX}/quictls/include -I${INSTALL_PREFIX}/ngtcp2/include -I${INSTALL_PREFIX}/nghttp3/include -I${INSTALL_PREFIX}/nghttp2/include -I${INSTALL_PREFIX}/libssh2/include -I${INSTALL_PREFIX}/brotli/include -I${INSTALL_PREFIX}/zstd/include"
+LIBS="-lbrotlidec-static -lbrotlicommon-static -lbrotlienc-static -lzstd -lnghttp2 -lssh2"
 
 # Ensure that the static libraries for Brotli are found, exit if not found
 if [ ! -f ${INSTALL_PREFIX}/brotli/lib64/libbrotlidec-static.a ] || [ ! -f ${INSTALL_PREFIX}/brotli/lib64/libbrotlicommon-static.a ] || [ ! -f ${INSTALL_PREFIX}/brotli/lib64/libbrotlienc-static.a ]; then
@@ -232,11 +264,12 @@ fi
     --with-openssl=${INSTALL_PREFIX}/quictls \
     --with-nghttp3=${INSTALL_PREFIX}/nghttp3 \
     --with-ngtcp2=${INSTALL_PREFIX}/ngtcp2 \
+    --with-nghttp2=${INSTALL_PREFIX}/nghttp2 \
     --disable-shared \
     --enable-static \
     --with-brotli=${INSTALL_PREFIX}/brotli \
     --with-zstd=${INSTALL_PREFIX}/zstd \
-    --with-libssh2 \
+    --with-libssh2=${INSTALL_PREFIX}/libssh2 \
     --enable-alt-svc
 
 # Build and install curl
@@ -245,8 +278,8 @@ sudo make install
 popd
 
 # Check static quicTLS OpenSSL binary
-echo
-ldd "${INSTALL_PREFIX}/quictls-static/bin/openssl"
+# echo
+# ldd "${INSTALL_PREFIX}/quictls-static/bin/openssl"
 echo
 ${INSTALL_PREFIX}/quictls-static/bin/openssl version -a
 
@@ -254,9 +287,10 @@ ${INSTALL_PREFIX}/quictls-static/bin/openssl version -a
 echo
 ${INSTALL_PREFIX}/quictls-static/bin/openssl ciphers -V 'ALL:COMPLEMENTOFALL'
 
-# Check curl build
-echo
-ldd /usr/local/bin/curl
+# # Check curl build
+# echo
+# echo "ldd /usr/local/bin/curl"
+# ldd /usr/local/bin/curl
 
 # Print the version of the installed curl binary
 echo
