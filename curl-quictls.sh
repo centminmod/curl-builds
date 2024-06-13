@@ -20,6 +20,10 @@ BUILD_NGHTTP3='y'
 BUILD_NGHTTP2='y'
 BUILD_NGTCP2='y'
 BUILD_LIBSSH2='y'
+BUILD_LIBIDN2='y'
+BUILD_LIBPSL='y'
+BUILD_LIBLDAP='y'
+BUILD_LIBPCRE2='y'
 BUILD_STATIC_OPENSSL='y'
 QUICTL_VERSION="openssl-3.1.5+quic"
 QUICTL_REPO="https://github.com/quictls/openssl"
@@ -34,13 +38,25 @@ BROTLI_VERSION="v1.1.0"
 BROTLI_REPO="https://github.com/google/brotli"
 LIBSSH2_VERSION="1.11.0"
 LIBSSH2_REPO="https://www.libssh2.org/download/libssh2-1.11.0.tar.gz"
+LIBIDN2_VERSION="2.3.7"
+LIBIDN2_REPO="https://gitlab.com/libidn/libidn2.git"
+LIBPSL_VERSION="0.21.5"
+LIBPSL_REPO="https://github.com/rockdaboot/libpsl.git"
+LIBLDAP_VERSION="OPENLDAP_REL_ENG_2_6_8"
+LIBLDAP_REPO="https://github.com/openldap/openldap.git"
+LIBPCRE2_VERSION="10.44"
+LIBPCRE2_REPO="https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.44/pcre2-10.44.tar.gz"
 ZSTD_VERSION="v1.5.6"
 ZSTD_REPO="https://github.com/facebook/zstd"
 QUICTL_DIR=${BUILD_DIR}/quictls
 NGHTTP3_DIR=${BUILD_DIR}/nghttp3
 NGTCP2_DIR=${BUILD_DIR}/ngtcp2
 NGHTTP2_DIR=${BUILD_DIR}/nghttp2
+LIBIDN2_DIR=${BUILD_DIR}/libidn2
 LIBSSH2_DIR=${BUILD_DIR}/libssh2
+LIBPSL_DIR=${BUILD_DIR}/libpsl
+LIBLDAP_DIR=${BUILD_DIR}/libldap
+LIBPCRE2_DIR=${BUILD_DIR}/libpcre2
 CURL_DIR=${BUILD_DIR}/curl
 BROTLI_DIR=${BUILD_DIR}/brotli
 ZSTD_DIR=${BUILD_DIR}/zstd
@@ -57,7 +73,7 @@ packages=(
     cmake3 ninja-build clang perl golang autoconf libtool pkg-config make gcc gcc-c++ glibc-static
     openldap-clients openldap-devel libxml2-devel libidn2-devel libnghttp2-devel libev-devel jemalloc-devel
     c-ares-devel libunistring-devel libmetalink-devel libssh2-devel libpsl-devel openssl-devel nghttp2-devel
-    cargo
+    cargo gperf gengetopt help2man texinfo gettext gettext-devel
 )
 
 # Array to store packages that need to be installed
@@ -87,9 +103,9 @@ fi
 # Function to clean up installation directories
 clean_install_dirs() {
     if [[ "$BUILD_QUICTLS" = [yY] ]]; then
-        sudo rm -rf ${QUICTL_DIR} ${NGHTTP3_DIR} ${NGTCP2_DIR} ${NGHTTP2_DIR} ${LIBSSH2_DIR} ${CURL_DIR} ${BROTLI_DIR} ${ZSTD_DIR}
+        sudo rm -rf ${QUICTL_DIR} ${NGHTTP3_DIR} ${NGTCP2_DIR} ${NGHTTP2_DIR} ${LIBIDN2_DIR} ${LIBSSH2_DIR} ${LIBPSL_DIR} ${CURL_DIR} ${BROTLI_DIR} ${ZSTD_DIR} ${LIBLDAP_DIR} ${LIBPCRE2_DIR}
     else
-        sudo rm -rf ${NGHTTP3_DIR} ${NGTCP2_DIR} ${NGHTTP2_DIR} ${LIBSSH2_DIR} ${CURL_DIR} ${BROTLI_DIR} ${ZSTD_DIR}
+        sudo rm -rf ${NGHTTP3_DIR} ${NGTCP2_DIR} ${NGHTTP2_DIR} ${LIBIDN2_DIR} ${LIBSSH2_DIR} ${LIBPSL_DIR} ${CURL_DIR} ${BROTLI_DIR} ${ZSTD_DIR} ${LIBLDAP_DIR} ${LIBPCRE2_DIR}
     fi
 }
 
@@ -99,10 +115,16 @@ clean_install_dirs
 # Enable gcc-toolset if available
 if [ -f /opt/rh/gcc-toolset-13/root/usr/bin/gcc ]; then
     source /opt/rh/gcc-toolset-13/enable
+    export CFLAGS="${CFLAGS} -Wno-unused-parameter -Wno-stringop-truncation -Wimplicit-fallthrough=0 -Wno-implicit-function-declaration"
+    export CXXFLAGS="${CXXFLAGS} -Wno-unused-parameter -Wno-stringop-truncation -Wimplicit-fallthrough=0 -Wno-implicit-function-declaration"
 elif [ -f /opt/rh/gcc-toolset-12/root/usr/bin/gcc ]; then
     source /opt/rh/gcc-toolset-12/enable
+    export CFLAGS="${CFLAGS} -Wno-unused-parameter -Wno-stringop-truncation -Wimplicit-fallthrough=0 -Wno-implicit-function-declaration"
+    export CXXFLAGS="${CXXFLAGS} -Wno-unused-parameter -Wno-stringop-truncation -Wimplicit-fallthrough=0 -Wno-implicit-function-declaration"
 elif [ -f /opt/rh/gcc-toolset-11/root/usr/bin/gcc ]; then
     source /opt/rh/gcc-toolset-11/enable
+    export CFLAGS="${CFLAGS} -Wno-unused-parameter -Wno-stringop-truncation -Wimplicit-fallthrough=0 -Wno-implicit-function-declaration"
+    export CXXFLAGS="${CXXFLAGS} -Wno-unused-parameter -Wno-stringop-truncation -Wimplicit-fallthrough=0 -Wno-implicit-function-declaration"
 fi
 
 # Ensure environment variables for compiler are set correctly
@@ -193,6 +215,21 @@ unset CXX
 export CC="ccache gcc"
 export CXX="ccache g++"
 
+# Compile libidn2 if BUILD_LIBIDN2 flag is set
+if [[ "$BUILD_LIBIDN2" = [yY] ]]; then
+    echo
+    echo "Compiling libidn2..."
+    pushd "${BUILD_DIR}"
+    git clone ${LIBIDN2_REPO}
+    cd libidn2
+    git checkout tags/v${LIBIDN2_VERSION} -b build
+    ./bootstrap
+    ./configure --prefix=${INSTALL_PREFIX}/libidn2
+    make -j$(nproc)
+    sudo make install
+    popd
+fi
+
 # Compile libssh2 if BUILD_LIBSSH2 flag is set
 if [[ "$BUILD_LIBSSH2" = [yY] ]]; then
     echo
@@ -207,6 +244,21 @@ if [[ "$BUILD_LIBSSH2" = [yY] ]]; then
     popd
 fi
 
+# Compile libpsl if BUILD_LIBPSL flag is set
+if [[ "$BUILD_LIBPSL" = [yY] ]]; then
+    echo
+    echo "Compiling libpsl..."
+    pushd "${BUILD_DIR}"
+    git clone ${LIBPSL_REPO}
+    cd libpsl
+    git checkout tags/${LIBPSL_VERSION} -b build
+    ./autogen.sh
+    ./configure --prefix=${INSTALL_PREFIX}/libpsl
+    make -j$(nproc)
+    sudo make install
+    popd
+fi
+
 # Compile Brotli
 echo
 echo "Compiling Brotli..."
@@ -214,7 +266,7 @@ pushd "${BUILD_DIR}"
 git clone --branch ${BROTLI_VERSION} ${BROTLI_REPO}
 cd brotli
 mkdir out && cd out
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}/brotli -DBUILD_SHARED_LIBS=OFF ..
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}/brotli -DBUILD_SHARED_LIBS=ON ..
 make -j$(nproc)
 sudo make install
 popd
@@ -228,6 +280,34 @@ cd zstd
 make -j$(nproc)
 sudo make install PREFIX=${INSTALL_PREFIX}/zstd
 popd
+
+# Compile libldap if BUILD_LIBLDAP flag is set
+if [[ "$BUILD_LIBLDAP" = [yY] ]]; then
+    echo
+    echo "Compiling libldap..."
+    pushd "${BUILD_DIR}"
+    git clone ${LIBLDAP_REPO}
+    cd openldap
+    git checkout ${LIBLDAP_VERSION} -b build
+    ./configure --prefix=${INSTALL_PREFIX}/libldap
+    make -j$(nproc)
+    sudo make install
+    popd
+fi
+
+# Compile libpcre2 if BUILD_LIBPCRE2 flag is set
+if [[ "$BUILD_LIBPCRE2" = [yY] ]]; then
+    echo
+    echo "Compiling libpcre2..."
+    pushd "${BUILD_DIR}"
+    curl -LO ${LIBPCRE2_REPO}
+    tar -xzf pcre2-${LIBPCRE2_VERSION}.tar.gz
+    cd pcre2-${LIBPCRE2_VERSION}
+    ./configure --prefix=${INSTALL_PREFIX}/libpcre2
+    make -j$(nproc)
+    sudo make install
+    popd
+fi
 
 # Compile curl
 echo
@@ -246,18 +326,18 @@ echo
 g++ --version
 
 # Set PKG_CONFIG_PATH to include the paths for the compiled dependencies
-export PKG_CONFIG_PATH=${INSTALL_PREFIX}/quictls/lib64/pkgconfig:${INSTALL_PREFIX}/nghttp3/lib/pkgconfig:${INSTALL_PREFIX}/ngtcp2/lib/pkgconfig:${INSTALL_PREFIX}/nghttp2/lib/pkgconfig:${INSTALL_PREFIX}/brotli/lib64/pkgconfig:${INSTALL_PREFIX}/zstd/lib/pkgconfig:${INSTALL_PREFIX}/libssh2/lib/pkgconfig
+export PKG_CONFIG_PATH=${INSTALL_PREFIX}/quictls/lib64/pkgconfig:${INSTALL_PREFIX}/nghttp3/lib/pkgconfig:${INSTALL_PREFIX}/ngtcp2/lib/pkgconfig:${INSTALL_PREFIX}/nghttp2/lib/pkgconfig:${INSTALL_PREFIX}/brotli/lib64/pkgconfig:${INSTALL_PREFIX}/zstd/lib/pkgconfig:${INSTALL_PREFIX}/libssh2/lib/pkgconfig:${INSTALL_PREFIX}/libpsl/lib/pkgconfig:${INSTALL_PREFIX}/libidn2/lib/pkgconfig:${INSTALL_PREFIX}/libldap/lib/pkgconfig:${INSTALL_PREFIX}/libpcre2/lib/pkgconfig
 
 # Set LDFLAGS and CPPFLAGS to include the paths for the compiled dependencies
-LDFLAGS="-Wl,-rpath,${INSTALL_PREFIX}/quictls/lib64:${INSTALL_PREFIX}/ngtcp2/lib:${INSTALL_PREFIX}/nghttp3/lib:${INSTALL_PREFIX}/nghttp2/lib:${INSTALL_PREFIX}/libssh2/lib:${INSTALL_PREFIX}/brotli/lib64:${INSTALL_PREFIX}/zstd/lib -L${INSTALL_PREFIX}/quictls/lib64 -L${INSTALL_PREFIX}/ngtcp2/lib -L${INSTALL_PREFIX}/nghttp3/lib -L${INSTALL_PREFIX}/nghttp2/lib -L${INSTALL_PREFIX}/brotli/lib64 -L${INSTALL_PREFIX}/zstd/lib -L${INSTALL_PREFIX}/libssh2/lib"
-CPPFLAGS="-I${INSTALL_PREFIX}/quictls/include -I${INSTALL_PREFIX}/ngtcp2/include -I${INSTALL_PREFIX}/nghttp3/include -I${INSTALL_PREFIX}/nghttp2/include -I${INSTALL_PREFIX}/libssh2/include -I${INSTALL_PREFIX}/brotli/include -I${INSTALL_PREFIX}/zstd/include"
-LIBS="-lbrotlidec-static -lbrotlicommon-static -lbrotlienc-static -lzstd -lnghttp2 -lssh2"
+LDFLAGS="-L${INSTALL_PREFIX}/brotli/lib64 -Wl,-rpath,${INSTALL_PREFIX}/quictls/lib64:${INSTALL_PREFIX}/ngtcp2/lib:${INSTALL_PREFIX}/nghttp3/lib:${INSTALL_PREFIX}/nghttp2/lib:${INSTALL_PREFIX}/libssh2/lib:${INSTALL_PREFIX}/libpsl/lib:${INSTALL_PREFIX}/libldap/lib:${INSTALL_PREFIX}/libpcre2/lib:${INSTALL_PREFIX}/libidn2/lib:${INSTALL_PREFIX}/brotli/lib64:${INSTALL_PREFIX}/zstd/lib -L${INSTALL_PREFIX}/quictls/lib64 -L${INSTALL_PREFIX}/ngtcp2/lib -L${INSTALL_PREFIX}/nghttp3/lib -L${INSTALL_PREFIX}/nghttp2/lib -L${INSTALL_PREFIX}/brotli/lib64 -L${INSTALL_PREFIX}/zstd/lib -L${INSTALL_PREFIX}/libidn2/lib -L${INSTALL_PREFIX}/libssh2/lib -L${INSTALL_PREFIX}/libpsl/lib -L${INSTALL_PREFIX}/libldap/lib -L${INSTALL_PREFIX}/libpcre2/lib"
+CPPFLAGS="-I${INSTALL_PREFIX}/quictls/include -I${INSTALL_PREFIX}/ngtcp2/include -I${INSTALL_PREFIX}/nghttp3/include -I${INSTALL_PREFIX}/nghttp2/include -I${INSTALL_PREFIX}/libssh2/include -I${INSTALL_PREFIX}/libpsl/include -I${INSTALL_PREFIX}/brotli/include -I${INSTALL_PREFIX}/zstd/include -I${INSTALL_PREFIX}/libidn2/include -I${INSTALL_PREFIX}/libldap/include -I${INSTALL_PREFIX}/libpcre2/include"
+LIBS="-lbrotlidec -lbrotlicommon -lbrotlienc -lzstd -lnghttp2 -lnghttp3 -lnghttp2 -lngtcp2_crypto_quictls -lngtcp2 -lidn2 -lidn2 -lssh2 -lpsl -lldap -lpcre2-8"
 
 # Ensure that the static libraries for Brotli are found, exit if not found
-if [ ! -f ${INSTALL_PREFIX}/brotli/lib64/libbrotlidec-static.a ] || [ ! -f ${INSTALL_PREFIX}/brotli/lib64/libbrotlicommon-static.a ] || [ ! -f ${INSTALL_PREFIX}/brotli/lib64/libbrotlienc-static.a ]; then
-    echo "Brotli static libraries not found. Please check the installation."
-    exit 1
-fi
+# if [ ! -f ${INSTALL_PREFIX}/brotli/lib64/libbrotlidec-static.a ] || [ ! -f ${INSTALL_PREFIX}/brotli/lib64/libbrotlicommon-static.a ] || [ ! -f ${INSTALL_PREFIX}/brotli/lib64/libbrotlienc-static.a ]; then
+#     echo "Brotli static libraries not found. Please check the installation."
+#     exit 1
+# fi
 
 # Configure curl with the compiled dependencies and required options
 ./configure LDFLAGS="${LDFLAGS}" CPPFLAGS="${CPPFLAGS}" LIBS="${LIBS}" \

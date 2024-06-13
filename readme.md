@@ -1,8 +1,8 @@
 Custom curl version built with HTTP/3 QUIC support
 
 ```
-curl -V
-curl 8.9.0-DEV (x86_64-pc-linux-gnu) libcurl/8.9.0-DEV quictls/3.1.5 zlib/1.2.11 brotli/1.0.9 zstd/1.5.6 libidn2/2.2.0 libpsl/0.20.2 libssh2/1.11.0 nghttp2/1.62.1 ngtcp2/1.5.0 nghttp3/1.3.0 OpenLDAP/2.4.46
+/usr/local/bin/curl -V
+curl 8.9.0-DEV (x86_64-pc-linux-gnu) libcurl/8.9.0-DEV quictls/3.1.5 zlib/1.2.11 brotli/1.1.0 zstd/1.5.6 libidn2/2.3.7 libpsl/0.21.5 libssh2/1.11.0 nghttp2/1.62.1 ngtcp2/1.5.0 nghttp3/1.3.0 OpenLDAP/2.6.8
 Release-Date: [unreleased]
 Protocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp scp sftp smb smbs smtp smtps telnet tftp
 Features: alt-svc AsynchDNS brotli HSTS HTTP2 HTTP3 HTTPS-proxy IDN IPv6 Largefile libz NTLM PSL SSL threadsafe TLS-SRP UnixSockets zstd
@@ -10,41 +10,42 @@ Features: alt-svc AsynchDNS brotli HSTS HTTP2 HTTP3 HTTPS-proxy IDN IPv6 Largefi
 
 ```
 ldd /usr/local/bin/curl
-        linux-vdso.so.1 (0x00007ffe95b07000)
-        libnghttp3.so.9 => /opt/curl-quictls/nghttp3/lib/libnghttp3.so.9 (0x00007f8d68483000)
-        libngtcp2_crypto_quictls.so.2 => /opt/curl-quictls/ngtcp2/lib/libngtcp2_crypto_quictls.so.2 (0x00007f8d68477000)
-        libngtcp2.so.16 => /opt/curl-quictls/ngtcp2/lib/libngtcp2.so.16 (0x00007f8d68430000)
-        libidn2.so.0 => /lib64/libidn2.so.0 (0x00007f8d68061000)
-        libpsl.so.5 => /lib64/libpsl.so.5 (0x00007f8d67e50000)
-        libldap-2.4.so.2 => /lib64/libldap-2.4.so.2 (0x00007f8d67c01000)
-        liblber-2.4.so.2 => /lib64/liblber-2.4.so.2 (0x00007f8d679f1000)
-        libbrotlidec.so.1 => /opt/curl-quictls/brotli/lib64/libbrotlidec.so.1 (0x00007f8d68416000)
-        libzstd.so.1 => /opt/curl-quictls/zstd/lib/libzstd.so.1 (0x00007f8d68321000)
-        libnghttp2.so.14 => /opt/curl-quictls/nghttp2/lib/libnghttp2.so.14 (0x00007f8d682f1000)
-        libssh2.so.1 => /opt/curl-quictls/libssh2/lib/libssh2.so.1 (0x00007f8d682ae000)
-        libz.so.1 => /lib64/libz.so.1 (0x00007f8d677d7000)
-        libssl.so.81.3 => /opt/curl-quictls/quictls/lib64/libssl.so.81.3 (0x00007f8d6772a000)
-        libcrypto.so.81.3 => /opt/curl-quictls/quictls/lib64/libcrypto.so.81.3 (0x00007f8d6720d000)
-        libpthread.so.0 => /lib64/libpthread.so.0 (0x00007f8d66fed000)
-        libc.so.6 => /lib64/libc.so.6 (0x00007f8d66c17000)
-        libunistring.so.2 => /lib64/libunistring.so.2 (0x00007f8d66896000)
-        libresolv.so.2 => /lib64/libresolv.so.2 (0x00007f8d6667c000)
-        libsasl2.so.3 => /lib64/libsasl2.so.3 (0x00007f8d6645e000)
-        libssl.so.1.1 => /lib64/libssl.so.1.1 (0x00007f8d661ca000)
-        libcrypto.so.1.1 => /lib64/libcrypto.so.1.1 (0x00007f8d65cdf000)
-        libm.so.6 => /lib64/libm.so.6 (0x00007f8d6595d000)
-        libbrotlicommon.so.1 => /lib64/libbrotlicommon.so.1 (0x00007f8d6573c000)
-        libdl.so.2 => /lib64/libdl.so.2 (0x00007f8d65536000)
-        /lib64/ld-linux-x86-64.so.2 (0x00007f8d6827f000)
-        libcrypt.so.1 => /lib64/libcrypt.so.1 (0x00007f8d6530d000)
-        libgssapi_krb5.so.2 => /lib64/libgssapi_krb5.so.2 (0x00007f8d650b8000)
-        libkrb5.so.3 => /lib64/libkrb5.so.3 (0x00007f8d64dcd000)
-        libk5crypto.so.3 => /lib64/libk5crypto.so.3 (0x00007f8d64bb6000)
-        libcom_err.so.2 => /lib64/libcom_err.so.2 (0x00007f8d649b2000)
-        libkrb5support.so.0 => /lib64/libkrb5support.so.0 (0x00007f8d6479f000)
-        libkeyutils.so.1 => /lib64/libkeyutils.so.1 (0x00007f8d6459b000)
-        libselinux.so.1 => /lib64/libselinux.so.1 (0x00007f8d64370000)
-        libpcre2-8.so.0 => /lib64/libpcre2-8.so.0 (0x00007f8d640ec000)
+        linux-vdso.so.1 (0x00007ffcb3ed0000)
+        libbrotlidec.so.1 => /opt/curl-quictls/brotli/lib64/libbrotlidec.so.1 (0x00007feabb0c2000)
+        libbrotlicommon.so.1 => /opt/curl-quictls/brotli/lib64/libbrotlicommon.so.1 (0x00007feabb09f000)
+        libbrotlienc.so.1 => /opt/curl-quictls/brotli/lib64/libbrotlienc.so.1 (0x00007feabaff1000)
+        libzstd.so.1 => /opt/curl-quictls/zstd/lib/libzstd.so.1 (0x00007feabacf2000)
+        libnghttp3.so.9 => /opt/curl-quictls/nghttp3/lib/libnghttp3.so.9 (0x00007feabafbe000)
+        libnghttp2.so.14 => /opt/curl-quictls/nghttp2/lib/libnghttp2.so.14 (0x00007feabaf83000)
+        libngtcp2_crypto_quictls.so.2 => /opt/curl-quictls/ngtcp2/lib/libngtcp2_crypto_quictls.so.2 (0x00007feabaf76000)
+        libngtcp2.so.16 => /opt/curl-quictls/ngtcp2/lib/libngtcp2.so.16 (0x00007feabaf19000)
+        libssh2.so.1 => /opt/curl-quictls/libssh2/lib/libssh2.so.1 (0x00007feabac9f000)
+        libz.so.1 => /lib64/libz.so.1 (0x00007feabaa87000)
+        libpsl.so.5 => /opt/curl-quictls/libpsl/lib/libpsl.so.5 (0x00007feabaef7000)
+        libidn2.so.0 => /opt/curl-quictls/libidn2/lib/libidn2.so.0 (0x00007feabaa2d000)
+        libunistring.so.2 => /lib64/libunistring.so.2 (0x00007feaba6ac000)
+        libldap.so.2 => /opt/curl-quictls/libldap/lib/libldap.so.2 (0x00007feaba639000)
+        liblber.so.2 => /opt/curl-quictls/libldap/lib/liblber.so.2 (0x00007feabaee5000)
+        libresolv.so.2 => /lib64/libresolv.so.2 (0x00007feaba421000)
+        libsasl2.so.3 => /lib64/libsasl2.so.3 (0x00007feaba203000)
+        libssl.so.81.3 => /opt/curl-quictls/quictls/lib64/libssl.so.81.3 (0x00007feaba131000)
+        libcrypto.so.81.3 => /opt/curl-quictls/quictls/lib64/libcrypto.so.81.3 (0x00007feab9b8d000)
+        libpcre2-8.so.0 => /opt/curl-quictls/libpcre2/lib/libpcre2-8.so.0 (0x00007feab9b13000)
+        libpthread.so.0 => /lib64/libpthread.so.0 (0x00007feab98f3000)
+        libc.so.6 => /lib64/libc.so.6 (0x00007feab951d000)
+        libm.so.6 => /lib64/libm.so.6 (0x00007feab919b000)
+        libssl.so.1.1 => /lib64/libssl.so.1.1 (0x00007feab8f07000)
+        libcrypto.so.1.1 => /lib64/libcrypto.so.1.1 (0x00007feab8a1c000)
+        libdl.so.2 => /lib64/libdl.so.2 (0x00007feab8818000)
+        libcrypt.so.1 => /lib64/libcrypt.so.1 (0x00007feab85ef000)
+        libgssapi_krb5.so.2 => /lib64/libgssapi_krb5.so.2 (0x00007feab839a000)
+        libkrb5.so.3 => /lib64/libkrb5.so.3 (0x00007feab80af000)
+        libk5crypto.so.3 => /lib64/libk5crypto.so.3 (0x00007feab7e98000)
+        libcom_err.so.2 => /lib64/libcom_err.so.2 (0x00007feab7c94000)
+        /lib64/ld-linux-x86-64.so.2 (0x00007feabaea3000)
+        libkrb5support.so.0 => /lib64/libkrb5support.so.0 (0x00007feab7a83000)
+        libkeyutils.so.1 => /lib64/libkeyutils.so.1 (0x00007feab787f000)
+        libselinux.so.1 => /lib64/libselinux.so.1 (0x00007feab7654000)
 ```
 
 Compared to AlmaLinux 8 system provided curl version
